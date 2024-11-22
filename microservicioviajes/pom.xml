@@ -57,8 +57,13 @@
             <optional>true</optional>
         </dependency>
 
-        <!--DEPENDENCIAS PARA LA CONEXION AL EUREKA Y EL CONFIG-->
-
+        <!--DEPENDENCIAS PARA LA CONEXION AL EUREKA-->
+        <!-- https://mvnrepository.com/artifact/org.springframework.cloud/spring-cloud-starter-netflix-eureka-client -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+            <version>4.1.3</version>
+        </dependency>
 
         <!--CLIENT FEIGN-->
         <!-- https://mvnrepository.com/artifact/org.springframework.cloud/spring-cloud-starter-openfeign -->
