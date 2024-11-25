@@ -3,11 +3,33 @@ spring:
     name: apigateway
   cloud:
     gateway:
-      routes:
-        - id: microservicioviajes
-          uri: lb://microservicioviajes
-          predicates:
-            - Path=/api/viajes/**
+      mvc:
+        routes:
+          - id: microservicioviajes
+            uri: lb://microservicioviajes
+            predicates:
+              - Path=/api/viajes/**
+          - id: microserviciocuentas-usuario
+            uri: lb://microserviciocuentas
+            predicates:
+              - Path=/api/usuarios/**
+          - id: microserviciocuentas-cuentas
+            uri: lb://microserviciocuentas
+            predicates:
+              - Path=/api/mercadopago/cuentas**
+          - id: microserviciocuentas-roles
+            uri: lb://microserviciocuentas
+            predicates:
+              - Path=/api/roles/**
+          - id: microservicioestaciones
+            uri: lb://microservicioestaciones
+            predicates:
+              - Path=/api/estaciones/**
+          - id: microserviciomonopatines
+            uri: lb://microserviciomonopatines
+            predicates:
+              - Path=/api/monopatines/**
+
 logging:
   level:
     org.springframework.cloud.gateway: DEBUG

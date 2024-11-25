@@ -1,6 +1,6 @@
 package org.arqui.grupo9.microservicioviajes.controller;
 
-import org.arqui.grupo9.microservicioviajes.model.dtos.ExcepcionDTO;
+import org.arqui.grupo9.microservicioviajes.services.dtos.ExcepcionDTO;
 import org.arqui.grupo9.microservicioviajes.services.exceptions.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

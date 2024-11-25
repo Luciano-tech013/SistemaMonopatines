@@ -4,10 +4,9 @@ import feign.FeignException;
 import org.arqui.grupo9.microservicioviajes.clients.CuentaFeignClient;
 import org.arqui.grupo9.microservicioviajes.clients.MonopatinFeignClient;
 import org.arqui.grupo9.microservicioviajes.model.Viaje;
-import org.arqui.grupo9.microservicioviajes.model.dtos.CuentaMpDTO;
-import org.arqui.grupo9.microservicioviajes.model.dtos.MonopatinDTO;
-import org.arqui.grupo9.microservicioviajes.model.dtos.ViajeDTO;
 import org.arqui.grupo9.microservicioviajes.repository.IViajeRepository;
+import org.arqui.grupo9.microservicioviajes.services.dtos.CuentaMpDTO;
+import org.arqui.grupo9.microservicioviajes.services.dtos.MonopatinDTO;
 import org.arqui.grupo9.microservicioviajes.services.exceptions.*;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -44,29 +43,18 @@ public class ViajeService {
         viajePausadoConRecargo = new AtomicBoolean(false);
     }
 
-    public List<ViajeDTO> findAll() {
-        List<Viaje> viajes = this.repository.findAll();
-
-        if(viajes.isEmpty())
-            return null;
-
-        List<ViajeDTO> viajesDTO = new LinkedList<>();
-        for(Viaje v : viajes) {
-            viajesDTO.add(new ViajeDTO(v.getFechaIniViaje(), v.getFechaFinViaje(), v.getKmsRecorridos(), v.getCostoTotal()));
-        }
-
-        return viajesDTO;
+    public List<Viaje> findAll() {
+        return this.repository.findAll();
     }
 
-    public ViajeDTO findById(Long idViaje) {
+    public Viaje findById(Long idViaje) {
         Optional<Viaje> viaje = this.repository.findById(idViaje);
         if(viaje.isPresent())
-            return new ViajeDTO(viaje.get().getFechaIniViaje(), viaje.get().getFechaFinViaje(), viaje.get().getKmsRecorridos(), viaje.get().getCostoTotal());
+            return viaje.get();
 
         throw new NotFoundViajeException("El id enviado es incorrecto, no existe en la tabla viaje", "El viaje solicitado nunca fue generado. Por favor, solicita un viaje finalizado", "low");
     }
 
-    /*Este es usado internamente, por essa razon no recibe DTO*/
     public boolean save(Viaje viaje) {
         this.repository.save(viaje);
         return true;
@@ -78,9 +66,9 @@ public class ViajeService {
         return true;
     }
 
-    public boolean generar(Long idCuenta, Long idMonopatin) {
+    public boolean generar(Long idCuentaMp, Long idMonopatin) {
         try {
-            cuenta = cuentaClient.findById(idCuenta).getBody();
+            cuenta = cuentaClient.findById(idCuentaMp).getBody();
         } catch(FeignException.FeignClientException ex) {
             throw new NotFoundUsuarioClientException("El usuario no está en el sistema", "No se pudo generar el viaje. Verifica los datos.", "high");
         }
@@ -96,7 +84,7 @@ public class ViajeService {
             throw new CreditoInsuficienteException("La cuenta del usuario no tiene suficiente dinero para realizar un viaje", "No tienes suficiente dinero para realizar un via. Por favor, carga credito", "high");
 
         // Generar el viaje
-        viajeGenerado = new Viaje(LocalDateTime.now(), idCuenta, idMonopatin);
+        viajeGenerado = new Viaje(LocalDateTime.now(), idCuentaMp, idMonopatin);
 
         if(LocalDate.now().isEqual(fechaNueva) || LocalDate.now().isAfter(fechaNueva))
             viajeGenerado.setPrecio(nuevoPrecio);
@@ -155,7 +143,7 @@ public class ViajeService {
     }
 
 
-    public ViajeDTO finalizar() {
+    public Viaje finalizar() {
         if (!viajeEnCurso.get())
             throw new FinalizarViajeException("Se intentó finalizar un viaje que no fue generado aún", "Para finalizar un viaje, primero debes generarlo.", "high");
 
@@ -208,7 +196,7 @@ public class ViajeService {
         //obtengo todos los tiempos de pausa de ese monopatin (inicio y fin)
         List<Viaje> datos = this.repository.getTiemposPausadosDeMonopatin(idMonopatin);
 
-        Duration tiempoTotal = Duration.ZERO;       
+        Duration tiempoTotal = Duration.ZERO;
         // Calcular el tiempo TOTAL de pausa
         for (Viaje viaje : datos) {
             System.out.println(viaje);
