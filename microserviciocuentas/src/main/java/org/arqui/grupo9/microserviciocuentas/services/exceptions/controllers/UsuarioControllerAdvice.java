@@ -1,6 +1,7 @@
 package org.arqui.grupo9.microserviciocuentas.services.exceptions.controllers;
 
 import org.arqui.grupo9.microserviciocuentas.services.dtos.ExcepcionDTO;
+import org.arqui.grupo9.microserviciocuentas.services.exceptions.DeleteUsuarioException;
 import org.arqui.grupo9.microserviciocuentas.services.exceptions.NotFoundFechaException;
 import org.arqui.grupo9.microserviciocuentas.services.exceptions.NotFoundUsuarioException;
 import org.arqui.grupo9.microserviciocuentas.services.exceptions.UsuarioYaRegistradoException;
@@ -40,59 +41,12 @@ public class UsuarioControllerAdvice {
      */
     @ExceptionHandler(value = NotFoundUsuarioException.class)
     public ResponseEntity<ExcepcionDTO> notFoundUsuarioExceptionHandler(NotFoundUsuarioException ex) {
-        ExcepcionDTO exception = this.createExceptionDTO(ex.getUserMessage(), ex.getSeverity());
+        ExcepcionDTO exception = new ExcepcionDTO(ex.getUserMessage(), ex.getSeverity());
         return new ResponseEntity<>(exception, HttpStatus.BAD_REQUEST);
     }
 
-    /**
-     * Maneja la excepción UsuarioYaRegistradoException.
-     *
-     * <p>Este método gestiona la excepción {@code UsuarioYaRegistradoException},
-     * que indica que el usuario ya existe en el sistema. Devuelve una respuesta con
-     * el código de estado {@code 400 BAD REQUEST}.</p>
-     *
-     * @param ex Excepción {@code UsuarioYaRegistradoException} con detalles sobre
-     *           el intento de registro duplicado.
-     * @return {@code ResponseEntity<ExcepcionDTO>} que contiene el mensaje de usuario
-     *         y la severidad de la excepción.
-     */
-    @ExceptionHandler(value = UsuarioYaRegistradoException.class)
-    public ResponseEntity<ExcepcionDTO> usuarioYaRegistradoExceptionHandler(UsuarioYaRegistradoException ex) {
-        return new ResponseEntity<ExcepcionDTO>(this.createExceptionDTO(ex.getUserMessage(), ex.getSeverity()), HttpStatus.BAD_REQUEST);
-    }
-
-    /**
-     * Manejador de excepciones para fechas no encontradas en el sistema.
-     * <p>
-     * Este método se ejecuta cuando se lanza una excepción de tipo {@code NotFoundFechaException}
-     * debido a que un mes o año solicitado no está registrado en el sistema.
-     * Al interceptar esta excepción, se construye un objeto {@code ExcepcionDTO} con un mensaje
-     * amigable para el usuario y el nivel de severidad, y se devuelve una respuesta con el estado
-     * {@code HttpStatus.BAD_REQUEST}.
-     * </p>
-     *
-     * @param ex La excepción {@code NotFoundFechaException} que fue lanzada.
-     * @return Un objeto {@code ResponseEntity<ExcepcionDTO>} que contiene el mensaje para el usuario
-     * y la severidad de la excepción, junto con un código de estado HTTP 400 (BAD_REQUEST).
-     */
-    @ExceptionHandler(value = NotFoundFechaException.class)
-    public ResponseEntity<ExcepcionDTO> notFoundFechaExceptionHandler(NotFoundFechaException ex) {
-        return new ResponseEntity<>(this.createExceptionDTO(ex.getUserMessage(), ex.getSeverity()), HttpStatus.BAD_REQUEST);
-    }
-
-    /**
-     * Método auxiliar para crear un {@code ExcepcionDTO}.
-     * <p>
-     * Este método se utiliza para crear un objeto {@code ExcepcionDTO} con un mensaje y severidad proporcionados, que luego
-     * será enviado al cliente como parte de la respuesta.
-     * </p>
-     *
-     * @param message El mensaje que será mostrado al usuario en caso de la excepción.
-     * @param severity El nivel de severidad de la excepción, que indica la gravedad del error.
-     *
-     * @return {@code ExcepcionDTO}: El objeto DTO que encapsula el mensaje y severidad para la respuesta.
-     */
-    private ExcepcionDTO createExceptionDTO(String message, String severity) {
-        return new ExcepcionDTO(message, severity);
+    @ExceptionHandler(value = DeleteUsuarioException.class)
+    public ResponseEntity<ExcepcionDTO> deleteUsuarioExceptionHandler(DeleteUsuarioException ex) {
+        return new ResponseEntity<>(new ExcepcionDTO(ex.getUserMessage(), ex.getSeverity()), HttpStatus.BAD_REQUEST);
     }
 }

@@ -1,18 +1,16 @@
 package org.arqui.grupo9.microserviciocuentas.services.dtos;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
+import org.arqui.grupo9.microserviciocuentas.models.Usuario;
 
-@Data
+import java.io.Serializable;
+import java.util.Set;
+
+@Getter
 @AllArgsConstructor
-public class UsuarioDTO {
-    @NotNull(message = "El id ingresado no puede ser vacio")
-    @Positive(message = "El id debe ser positivo")
-    private Long id;
-
+public class UsuarioRequestDTO implements Serializable {
     @NotBlank(message = "El nombre ingresado es invalido")
     private String nombre;
 
@@ -24,7 +22,4 @@ public class UsuarioDTO {
 
     @NotBlank(message = "El email ingresado es invalido")
     private String email;
-
-    @NotBlank(message = "La contraseña es invalida")
-    private String password;
 }

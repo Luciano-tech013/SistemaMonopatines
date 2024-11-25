@@ -36,41 +36,29 @@ public class CuentaMpController {
 
     @GetMapping("/{idCuentaMP}")
     public ResponseEntity<CuentaMpDTO> findById(@PathVariable Long idCuentaMP) {
-        CuentaMP cuenta = this.cuentaMpService.findByIdCuenta(idCuentaMP);
+        CuentaMP cuenta = this.cuentaMpService.findById(idCuentaMP);
         return new ResponseEntity<>(this.converter.fromEntity(cuenta), HttpStatus.FOUND);
-    }
-
-    @PostMapping("/crear")
-    public ResponseEntity<Boolean> crearCuenta(@RequestParam Long idUsuario) {
-        return new ResponseEntity<>(this.cuentaMpService.crearCuenta(idUsuario), HttpStatus.CREATED);
     }
 
     @PostMapping
     public ResponseEntity<Boolean> save(@RequestBody @Valid CuentaMpDTO cuenta) {
-        return new ResponseEntity<>(this.cuentaMpService.saveCuenta(this.converter.fromDTO(cuenta)), HttpStatus.CREATED);
+        return new ResponseEntity<>(this.cuentaMpService.save(this.converter.fromDTO(cuenta)), HttpStatus.CREATED);
+    }
+
+    @DeleteMapping("/{idCuentaMP}")
+    public ResponseEntity<Boolean> deleteById(@PathVariable Long idCuentaMP) {
+        return new ResponseEntity<>(this.cuentaMpService.deleteById(idCuentaMP), HttpStatus.OK);
     }
 
     @PutMapping("/{idCuentaMP}/cargarSaldo")
     public ResponseEntity<Boolean> cargarSaldo(@PathVariable Long idCuentaMP,
                                                @RequestParam(name="saldo", required = true) @NotEmpty(message="El sado no puede ser vacio") @Positive(message="El saldo no puede ser negativo") double saldo) {
-        return new ResponseEntity<>(this.cuentaMpService.cargarSaldoCuenta(idCuentaMP, saldo), HttpStatus.OK);
+        return new ResponseEntity<>(this.cuentaMpService.cargarSaldo(idCuentaMP, saldo), HttpStatus.OK);
     }
 
     @PutMapping("/{idCuentaMP}/descontarSaldo/viaje")
     public ResponseEntity<Boolean> descontarSaldo(@PathVariable Long idCuentaMP,
                                                   @RequestParam(name="saldo", required = true) @NotEmpty(message="El sado no puede ser vacio") @Positive(message="El saldo no puede ser negativo") double saldo) {
-        return new ResponseEntity<>(this.cuentaMpService.descontarSaldoCuenta(idCuentaMP, saldo), HttpStatus.OK);
-    }
-
-    //PUEDE TRAER PROBLEMAS DE MAPEO PORQUE YA EXISTE OTRO ENDPOINT IGUAL
-    @PutMapping("/{idCuentaMP}/inhabilitar")
-    public ResponseEntity<Boolean> inhabilitarCuenta(@PathVariable Long idCuentaMP,
-                                                     @RequestParam(name="hasta", required = true) @NotEmpty(message = "La fecha no puede ser vacia") LocalDate fechaHasta) {
-        return new ResponseEntity<>(this.cuentaMpService.inhabilitarCuenta(idCuentaMP, fechaHasta), HttpStatus.OK);
-    }
-
-    @DeleteMapping("/{idCuentaMP}")
-    public ResponseEntity<Boolean> deleteById(@PathVariable Long idCuentaMP) {
-        return new ResponseEntity<>(this.cuentaMpService.deleteByIdCuenta(idCuentaMP), HttpStatus.OK);
+        return new ResponseEntity<>(this.cuentaMpService.descontarSaldo(idCuentaMP, saldo), HttpStatus.OK);
     }
 }

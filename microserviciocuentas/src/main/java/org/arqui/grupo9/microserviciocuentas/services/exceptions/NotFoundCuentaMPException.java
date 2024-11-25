@@ -13,8 +13,8 @@ package org.arqui.grupo9.microserviciocuentas.services.exceptions;
  * del error.
  *
  */
-public class NotFoundCuentaException extends MyException {
-  public NotFoundCuentaException(String message, String userMessage, String severity) {
+public class NotFoundCuentaMPException extends MyException {
+  public NotFoundCuentaMPException(String message, String userMessage, String severity) {
     super(message, userMessage, severity);
   }
 }

@@ -16,54 +16,26 @@ public class CuentaMP {
     @Column(nullable = false)
     private Double saldo;
 
-    @Column(name = "fecha_inhabilitada")
-    private LocalDate fechaInahilitada;
-
-    @Column
-    private boolean inhabilitada;
-
-    @ManyToMany(targetEntity = Usuario.class, fetch = FetchType.LAZY)
-    @JoinTable(
-            name = "cuentas_sistemas",
-            joinColumns = @JoinColumn(name = "id_usuario"),
-            inverseJoinColumns = @JoinColumn(name = "id_cuentaMp")
-    )
-    private Set<Usuario> usuarios;
+    @OneToMany(targetEntity = CuentaSistema.class, fetch = FetchType.LAZY, mappedBy = "cuentaMp")
+    private Set<CuentaSistema> cuentasSistema;
 
     public CuentaMP() {}
-
-    public CuentaMP(Long idCuentaMP, Double saldo, HashSet<Usuario> usuarios) {
-        this.idCuentaMP = idCuentaMP;
-        this.saldo = saldo;
-        this.usuarios = usuarios;
-    }
 
     public CuentaMP(Long idCuentaMP, Double saldo) {
         this.idCuentaMP = idCuentaMP;
         this.saldo = saldo;
-        this.usuarios = new HashSet<>();
+        this.cuentasSistema = new HashSet<>();
     }
 
-    public CuentaMP(Double saldo) {
-        this.saldo = saldo;
-        this.usuarios = new HashSet<>();
+    public boolean tieneCuentasSistema() {
+        return !this.cuentasSistema.isEmpty();
     }
 
-    public boolean tieneUsuario(Usuario u) {
-        return this.usuarios.contains(u);
+    public void asociarCuentaSistema(CuentaSistema cuentaSistema) {
+        this.cuentasSistema.add(cuentaSistema);
     }
 
-    public void registrarUsuario(Usuario u) {
-        this.usuarios.add(u);
-    }
-
-    public void eliminarUsuario(Usuario u) {
-        this.usuarios.remove(u);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        CuentaMP otraCuenta = (CuentaMP) o;
-        return this.idCuentaMP.equals(otraCuenta.getIdCuentaMP());
+    public void desvincularCuentaSistema(CuentaSistema cuentaSistema) {
+        this.cuentasSistema.remove(cuentaSistema);
     }
 }

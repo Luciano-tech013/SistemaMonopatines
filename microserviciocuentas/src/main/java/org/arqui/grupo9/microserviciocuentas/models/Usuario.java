@@ -27,11 +27,13 @@ public class Usuario {
     @Column(nullable = false)
     private String email;
 
-    @Column(nullable = false)
-    private String password;
-
-    @ManyToMany(targetEntity = CuentaMP.class, mappedBy = "usuarios",fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private Set<CuentaMP> cuentasMp;
+    @ManyToMany(targetEntity = CuentaSistema.class, fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinTable(
+            name = "usuarios_vinculados",
+            joinColumns = @JoinColumn(name = "id_usuario"),
+            inverseJoinColumns = @JoinColumn(name = "id_cuenta_sistema")
+    )
+    private Set<CuentaSistema> cuentasSistema;
 
     @ManyToMany(targetEntity = Roles.class, fetch = FetchType.LAZY)
     private Set<Roles> roles;
@@ -39,41 +41,35 @@ public class Usuario {
     public Usuario() {
     }
 
-    public Usuario(Long idUsuario, String nombre, String apellido, String nroCelular, String email, String password) {
-        this.idUsuario = idUsuario;
-        this.nombre = nombre;
-        this.apellido = apellido;
-        this.nroCelular = nroCelular;
-        this.email = email;
-        this.password = password;
-        this.cuentasMp = new HashSet<>();
-        this.roles = new HashSet<>();
-    }
-
     public Usuario(String nombre, String apellido, String nroCelular, String email) {
         this.nombre = nombre;
         this.apellido = apellido;
         this.nroCelular = nroCelular;
         this.email = email;
-        this.cuentasMp = new HashSet<>();
+        this.cuentasSistema = new HashSet<>();
         this.roles = new HashSet<>();
     }
 
-    public boolean tieneCuenta(CuentaMP cuenta) {
-        return this.cuentasMp.contains(cuenta);
+    public boolean tieneCuenta(CuentaSistema cuenta) {
+        return this.cuentasSistema.contains(cuenta);
     }
 
-    public void asociarCuenta(CuentaMP cuenta) {
-        this.cuentasMp.add(cuenta);
+    public void asociarCuenta(CuentaSistema cuenta) {
+        this.cuentasSistema.add(cuenta);
     }
 
-    public void eliminarCuenta(CuentaMP cuenta) {
-        this.cuentasMp.remove(cuenta);
+    public void eliminarCuenta(CuentaSistema cuenta) {
+        this.cuentasSistema.remove(cuenta);
+    }
+
+    public boolean tieneCuentasSistema() {
+        return !this.cuentasSistema.isEmpty();
     }
 
     public boolean tieneRol(Roles rol) {
         return this.roles.contains(rol);
     }
+
     public void asignarRol(Roles authority) {
         this.roles.add(authority);
     }

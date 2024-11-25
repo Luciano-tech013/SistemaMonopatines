@@ -1,30 +1,24 @@
 package org.arqui.grupo9.microserviciocuentas.services;
 
 import org.arqui.grupo9.microserviciocuentas.models.Roles;
-import org.arqui.grupo9.microserviciocuentas.models.CuentaMP;
 import org.arqui.grupo9.microserviciocuentas.models.Usuario;
 import org.arqui.grupo9.microserviciocuentas.repositories.IUsuarioRepository;
-import org.arqui.grupo9.microserviciocuentas.services.dtos.UsuarioWithAuthoritiesDTO;
-import org.arqui.grupo9.microserviciocuentas.services.exceptions.CouldNotRegisterException;
-import org.arqui.grupo9.microserviciocuentas.services.exceptions.NotFoundCuentaException;
+import org.arqui.grupo9.microserviciocuentas.services.dtos.UsuarioRequestDTO;
+import org.arqui.grupo9.microserviciocuentas.services.exceptions.DeleteUsuarioException;
 import org.arqui.grupo9.microserviciocuentas.services.exceptions.NotFoundUsuarioException;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 @Service
 public class UsuarioService {
     private IUsuarioRepository repository;
-    private CuentaMpService cuentaMpService;
     private RolService rolService;
 
-    public UsuarioService(IUsuarioRepository repository, @Lazy CuentaMpService cuentaMpService, @Lazy RolService rolService) {
+    public UsuarioService(IUsuarioRepository repository, @Lazy RolService rolService) {
         this.repository = repository;
-        this.cuentaMpService = cuentaMpService;
         this.rolService = rolService;
     }
 
@@ -40,38 +34,31 @@ public class UsuarioService {
         throw new NotFoundUsuarioException("El usuario solicitado no esta cargado en el sistema", "El usuario solicitado no existe. Por favor, verifica que este cargado en el sistema", "low");
     }
 
-    public UsuarioWithAuthoritiesDTO findByEmail(String email) {
-        Optional<Usuario> u = this.repository.findByEmail(email);
-        if(u.isPresent()) {
-            Set<Roles> roles = u.get().getRoles();
-
-            List<String> authoritiesName = new LinkedList<>();
-            for(Roles rol : roles) {
-                authoritiesName.add(rol.getName());
-            }
-
-            return new UsuarioWithAuthoritiesDTO(u.get().getEmail(), u.get().getPassword(), authoritiesName);
-        }
-
-        throw new NotFoundUsuarioException("El usuario solicitado no esta cargado en el sistema", "El usuario solicitado no existe. Por favor, verifica que este cargado en el sistema", "low");
-    }
-
-    public boolean save(Usuario usuario) {
+    public boolean save(UsuarioRequestDTO uDTO) {
+        Usuario usuario = new Usuario(uDTO.getNombre(), uDTO.getApellido(), uDTO.getNroCelular(), uDTO.getEmail());
         Roles rol = this.rolService.findByName("USUARIO");
         usuario.asignarRol(rol);
         this.repository.save(usuario);
         return true;
     }
 
+    //SAVE PARA AQUELLOS SERVICIOS INTERNOS QUE NECESITAN PERSISTIR UN USUARIO
+    public boolean saveUsuario(Usuario u) {
+        this.repository.save(u);
+        return true;
+    }
+
     public boolean deleteById(Long id) {
-        System.out.println("Aca si llegue");
-        this.findById(id);
-        System.out.println("Aca no llegue");
+        Usuario u = this.findById(id);
+
+        if(u.tieneCuentasSistema())
+            throw new DeleteUsuarioException("Se intento eliminar un usuario que esta asociado a una cuenta", "No se puede eliminar un usuario si esta asociado a una cuenta", "high");
+
         this.repository.deleteById(id);
         return true;
     }
 
-    public boolean updateById(Long id, Usuario usuarioModified) {
+    public boolean updateById(Long id, UsuarioRequestDTO usuarioModified) {
         Usuario u = this.findById(id);
         if(u == null)
             return false;
@@ -81,39 +68,7 @@ public class UsuarioService {
         u.setEmail(usuarioModified.getEmail());
         u.setNroCelular(usuarioModified.getNroCelular());
 
-        return this.save(u);
+        this.repository.save(u);
+        return true;
     }
-
-    public boolean asociarCuenta(Long idUsuario, Long idCuentaMP) {
-        Usuario u = this.findById(idUsuario);
-        CuentaMP cuenta = this.cuentaMpService.findByIdCuenta(idCuentaMP);
-
-        if(!cuentaMpService.estaHabilitada(cuenta))
-            return false;
-
-        cuenta.registrarUsuario(u);
-        u.asociarCuenta(cuenta);
-        this.save(u);
-        this.cuentaMpService.saveCuenta(cuenta);
-
-        return cuenta.tieneUsuario(u);
-    }
-
-    public boolean eliminarCuentaDeUsuario(Long idUsuario, Long idCuentaMP) {
-        CuentaMP cuenta = this.cuentaMpService.findByIdCuenta(idCuentaMP);
-        Usuario usuario = this.findById(idUsuario);
-
-        if(!usuario.tieneCuenta(cuenta))
-            throw new NotFoundCuentaException("La cuenta solicitada para eliminar no esta cargada en el sistema", "La cuenta que intentas eliminar no esta asociada al usuario indicado", "low");
-
-        usuario.eliminarCuenta(cuenta);
-        cuenta.eliminarUsuario(usuario);
-
-        if(usuario.tieneCuenta(cuenta))
-            throw new CouldNotRegisterException("No se puedo deshacer la cuenta del usuario indicado", "No se puedo eliminar la cuenta del usuario indicado. Por favor intenta mas tarde", "high");
-
-        this.cuentaMpService.saveCuenta(cuenta);
-        return this.save(usuario);
-    }
-
 }
