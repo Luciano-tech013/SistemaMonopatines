@@ -16,7 +16,7 @@ spring:
           - id: microserviciocuentas-cuentas
             uri: lb://microserviciocuentas
             predicates:
-              - Path=/api/mercadopago/cuentas**
+              - Path=/api/cuentas/**
           - id: microserviciocuentas-roles
             uri: lb://microserviciocuentas
             predicates:
@@ -29,10 +29,19 @@ spring:
             uri: lb://microserviciomonopatines
             predicates:
               - Path=/api/monopatines/**
+          - id: serviciomercadopago
+            uri: lb://serviciomercadopago
+            predicates:
+              - Path=/api/mercadopago/cuentas/**
 
 logging:
   level:
     org.springframework.cloud.gateway: DEBUG
+    org:
+      springframework:
+        security: DEBUG
+        security.authentication: DEBUG
+        security.web: DEBUG
 
 eureka:
   client:

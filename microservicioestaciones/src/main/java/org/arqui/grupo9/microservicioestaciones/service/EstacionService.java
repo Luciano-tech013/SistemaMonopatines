@@ -56,8 +56,7 @@ public class EstacionService {
     }
 
     public List<Estacion> getEstacionesByUbicacion(Double latitud, Double longitud) {
-        //return this.estacionRepository.getEstacionsByUbicacion(latitud, longitud);
-        return null;
+        return this.estacionRepository.getEstacionsByUbicacion(latitud, (latitud + 100), longitud, (longitud + 100));
     }
 
     public List<MonopatinDTO> getMonopatinesByUbicacion(double latitud, double longitud) {

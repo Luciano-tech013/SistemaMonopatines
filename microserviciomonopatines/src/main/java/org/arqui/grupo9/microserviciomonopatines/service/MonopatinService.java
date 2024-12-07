@@ -3,11 +3,13 @@ package org.arqui.grupo9.microserviciomonopatines.service;
 import org.arqui.grupo9.microserviciomonopatines.client.ViajeFeignClient;
 import org.arqui.grupo9.microserviciomonopatines.model.Monopatin;
 import org.arqui.grupo9.microserviciomonopatines.repository.IMonopatinRepository;
+import org.arqui.grupo9.microserviciomonopatines.service.dto.ReporteTiempoTotalPausadoDTO;
 import org.arqui.grupo9.microserviciomonopatines.service.dto.ReporteUsoDTO;
 import org.arqui.grupo9.microserviciomonopatines.service.exceptions.NotFoundMonopatinException;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.LinkedList;
 import java.util.List;
@@ -78,16 +80,27 @@ public class MonopatinService {
             return null;
 
         //por cada monopatin obtenido
+        long horas = 0L;
+        long minutos = 0L;
         for(Monopatin m : monopatines) {
             //Si solicitaron incluir tiempo con pausa
             if(conPausa) {
                 //obtengo el tiempo total pausado de ese monopatin pegandole al microservicio de viajes, quien es el que posee ese dato y me lo devuelve ya calculado
-                LocalDateTime tiempoConPausa = this.viajeClient.getTiempoTotalPausadoDeMonopatin(m.getIdMonopatin()).getBody();
+                ReporteTiempoTotalPausadoDTO tiempoConPausa = this.viajeClient.getTiempoTotalPausadoDeMonopatin(m.getIdMonopatin()).getBody();
+
                 //genero el reporte con los kms y el tiempo de uso
-                reportes.add(new ReporteUsoDTO(m.getIdMonopatin(), m.getKmsRecorridos(), tiempoConPausa, m.getEstado()));
+                if (tiempoConPausa == null) {
+                    horas += 0;
+                    minutos += 0;
+                } else {
+                    horas += tiempoConPausa.getHoras();
+                    minutos += tiempoConPausa.getMinutos();
+                }
+
+                reportes.add(new ReporteUsoDTO(m.getIdMonopatin(), m.getKmsRecorridos(), horas, minutos, m.getEstado()));
             } else {
                 //Si no, genero el reporte solamente con los kms
-                reportes.add(new ReporteUsoDTO(m.getIdMonopatin(), m.getKmsRecorridos(), null, m.getEstado()));
+                reportes.add(new ReporteUsoDTO(m.getIdMonopatin(), m.getKmsRecorridos(), null, null, m.getEstado()));
             }
         }
 

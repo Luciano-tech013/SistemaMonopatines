@@ -7,9 +7,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-
 import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -37,7 +35,7 @@ public class CrudEstacionServiceTest {
         this.service.save(e);
         Estacion eFinded = this.service.findById("2");
 
-        assertEquals(e.getIdEstacion(), eFinded.getIdEstacion());
+        assertEquals(e.get_id(), eFinded.get_id());
         assertEquals(e.getNombre(), eFinded.getNombre());
         assertEquals(e.getLatitud(), eFinded.getLatitud());
         assertEquals(e.getLongitud(), eFinded.getLongitud());

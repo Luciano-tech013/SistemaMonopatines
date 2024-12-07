@@ -58,8 +58,8 @@ public class EstacionController {
 
     @GetMapping("/ubicacion")
     public ResponseEntity<List<ReporteDTO>> getMonopatinesByUbicacion(
-            @RequestParam(name = "latitud", required = true) @NotEmpty(message = "La latitud enviada no es valida") Double latitud,
-            @RequestParam(name = "longitud", required = true) @NotEmpty(message = "La longitud enviada no es valida") Double longitud){
+            @RequestParam(name = "latitud", required = true) Double latitud,
+            @RequestParam(name = "longitud", required = true) Double longitud){
 
         List<Estacion> estaciones = this.estacionService.getEstacionesByUbicacion(latitud, longitud);
 

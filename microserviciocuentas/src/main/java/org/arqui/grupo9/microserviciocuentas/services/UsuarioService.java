@@ -3,7 +3,8 @@ package org.arqui.grupo9.microserviciocuentas.services;
 import org.arqui.grupo9.microserviciocuentas.models.Roles;
 import org.arqui.grupo9.microserviciocuentas.models.Usuario;
 import org.arqui.grupo9.microserviciocuentas.repositories.IUsuarioRepository;
-import org.arqui.grupo9.microserviciocuentas.services.dtos.UsuarioRequestDTO;
+import org.arqui.grupo9.microserviciocuentas.services.dtos.UsuarioDTO;
+import org.arqui.grupo9.microserviciocuentas.services.exceptions.CuentaMPYaRegistradaException;
 import org.arqui.grupo9.microserviciocuentas.services.exceptions.DeleteUsuarioException;
 import org.arqui.grupo9.microserviciocuentas.services.exceptions.NotFoundUsuarioException;
 import org.springframework.context.annotation.Lazy;
@@ -16,10 +17,12 @@ import java.util.Optional;
 public class UsuarioService {
     private IUsuarioRepository repository;
     private RolService rolService;
+    private CuentaMpService cuentaMpService;
 
-    public UsuarioService(IUsuarioRepository repository, @Lazy RolService rolService) {
+    public UsuarioService(IUsuarioRepository repository, @Lazy RolService rolService, @Lazy CuentaMpService cuentaMpService) {
         this.repository = repository;
         this.rolService = rolService;
+        this.cuentaMpService = cuentaMpService;
     }
 
     public List<Usuario> findAll() {
@@ -34,16 +37,7 @@ public class UsuarioService {
         throw new NotFoundUsuarioException("El usuario solicitado no esta cargado en el sistema", "El usuario solicitado no existe. Por favor, verifica que este cargado en el sistema", "low");
     }
 
-    public boolean save(UsuarioRequestDTO uDTO) {
-        Usuario usuario = new Usuario(uDTO.getNombre(), uDTO.getApellido(), uDTO.getNroCelular(), uDTO.getEmail());
-        Roles rol = this.rolService.findByName("USUARIO");
-        usuario.asignarRol(rol);
-        this.repository.save(usuario);
-        return true;
-    }
-
-    //SAVE PARA AQUELLOS SERVICIOS INTERNOS QUE NECESITAN PERSISTIR UN USUARIO
-    public boolean saveUsuario(Usuario u) {
+    public boolean save(Usuario u) {
         this.repository.save(u);
         return true;
     }
@@ -58,7 +52,7 @@ public class UsuarioService {
         return true;
     }
 
-    public boolean updateById(Long id, UsuarioRequestDTO usuarioModified) {
+    public boolean updateById(Long id, UsuarioDTO usuarioModified) {
         Usuario u = this.findById(id);
         if(u == null)
             return false;
@@ -68,6 +62,58 @@ public class UsuarioService {
         u.setEmail(usuarioModified.getEmail());
         u.setNroCelular(usuarioModified.getNroCelular());
 
+        this.repository.save(u);
+        return true;
+    }
+
+    public boolean desvincularCuentaMercadoPago(Long idUsuario, Long idCuentaMp) {
+        Usuario u = this.findById(idUsuario);
+        CuentaMP cuenta = this.cuentaMpService.findById(idCuentaMp);
+
+        if(!u.tieneCuenta(cuenta))
+            throw new CuentaMPYaRegistradaException("Se intento desvincular una cuenta que no esta asociada al usuario", "La cuenta no esta asociada al usuario", "low");
+
+        u.desvincularCuenta(cuenta);
+        cuenta.desvincularUsuario(u);
+        this.repository.save(u);
+        this.cuentaMpService.save(cuenta);
+        return true;
+    }
+
+    public boolean vincularNuevaCuentaMercadoPago(Long idUsuario, Long idCuentaMp) {
+        Usuario u = this.findById(idUsuario);
+        CuentaMP cuenta = this.cuentaMpService.findById(idCuentaMp);
+
+        if(u.tieneCuenta(cuenta))
+            throw new CuentaMPYaRegistradaException("Se intento desvincular una cuenta que no esta asociada al usuario", "La cuenta no esta asociada al usuario", "low");
+
+        u.vincularCuenta(cuenta);
+        cuenta.vincularUsuario(u);
+        this.repository.save(u);
+        this.cuentaMpService.save(cuenta);
+        return true;
+    }
+
+    public boolean asignarNuevoRol(Long idUsuario, String name) {
+        Usuario u = this.findById(idUsuario);
+        Roles rol = this.rolService.findByName(name);
+
+        if(u.tieneRol(rol))
+            return false;
+
+        u.asignarRol(rol);
+        this.repository.save(u);
+        return true;
+    }
+
+    public boolean desasignarRol(Long idUsuario, String name) {
+        Usuario u = this.findById(idUsuario);
+        Roles rol = this.rolService.findByName(name);
+
+        if(!u.tieneRol(rol))
+            return false;
+
+        u.asignarRol(rol);
         this.repository.save(u);
         return true;
     }

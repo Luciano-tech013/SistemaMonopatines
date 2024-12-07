@@ -12,7 +12,7 @@ public class MonopatinConverter extends ConverterDTO<Monopatin, MonopatinDTO> {
         if(e == null)
             return null;
 
-        return new MonopatinDTO(e.getIdMonopatin(), e.getKmsRecorridos(), e.getLatitud(), e.getLongitud(), e.getEstado());
+        return new MonopatinDTO(e.getIdMonopatin(), e.getKmsRecorridos(), e.getModelo(), e.getLatitud(), e.getLongitud(), e.getEstado(), e.getCodigoQR());
     }
 
     @Override
@@ -20,6 +20,6 @@ public class MonopatinConverter extends ConverterDTO<Monopatin, MonopatinDTO> {
         if(d == null)
             return null;
 
-        return new Monopatin(d.getIdMonopatin(), d.getKmsRecorridos(), d.getLatitud(), d.getLongitud(), d.getEstado());
+        return new Monopatin(d.getIdMonopatin(), d.getKmsRecorridos(), d.getModelo(), d.getLatitud(), d.getLongitud(), d.getEstado(), d.getCodigoQR());
     }
 }

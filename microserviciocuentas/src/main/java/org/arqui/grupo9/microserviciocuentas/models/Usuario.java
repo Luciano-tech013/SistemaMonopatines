@@ -27,13 +27,7 @@ public class Usuario {
     @Column(nullable = false)
     private String email;
 
-    @ManyToMany(targetEntity = CuentaSistema.class, fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @JoinTable(
-            name = "usuarios_vinculados",
-            joinColumns = @JoinColumn(name = "id_usuario"),
-            inverseJoinColumns = @JoinColumn(name = "id_cuenta_sistema")
-    )
-    private Set<CuentaSistema> cuentasSistema;
+    private Set<Long> cuentasMp;
 
     @ManyToMany(targetEntity = Roles.class, fetch = FetchType.LAZY)
     private Set<Roles> roles;
@@ -46,32 +40,32 @@ public class Usuario {
         this.apellido = apellido;
         this.nroCelular = nroCelular;
         this.email = email;
-        this.cuentasSistema = new HashSet<>();
+        this.cuentasMp = new HashSet<>();
         this.roles = new HashSet<>();
     }
 
-    public boolean tieneCuenta(CuentaSistema cuenta) {
-        return this.cuentasSistema.contains(cuenta);
+    public boolean tieneCuenta(CuentaMP cuenta) {
+        return this.cuentasMp.contains(cuenta);
     }
 
-    public void asociarCuenta(CuentaSistema cuenta) {
-        this.cuentasSistema.add(cuenta);
+    public void vincularCuenta(CuentaMP cuenta) {
+        this.cuentasMp.add(cuenta);
     }
 
-    public void eliminarCuenta(CuentaSistema cuenta) {
-        this.cuentasSistema.remove(cuenta);
+    public void desvincularCuenta(CuentaMP cuenta) {
+        this.cuentasMp.remove(cuenta);
     }
 
     public boolean tieneCuentasSistema() {
-        return !this.cuentasSistema.isEmpty();
+        return !this.cuentasMp.isEmpty();
     }
 
     public boolean tieneRol(Roles rol) {
         return this.roles.contains(rol);
     }
 
-    public void asignarRol(Roles authority) {
-        this.roles.add(authority);
+    public void asignarRol(Roles rol) {
+        this.roles.add(rol);
     }
 
     @Override

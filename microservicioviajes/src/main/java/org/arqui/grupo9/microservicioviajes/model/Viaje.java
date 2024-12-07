@@ -37,8 +37,8 @@ public class Viaje {
     @Column(name = "fecha_fin_viaje_con_pausa")
     private LocalDateTime fechaFinViajeConPausa;
 
-    @Column(name = "id_usuario")
-    private Long idUsuario;
+    @Column(name = "id_cuenta_sistema")
+    private Long idCuentaSistema;
 
     @Column(name = "id_monopatin")
     private Long idMonopatin;
@@ -56,9 +56,9 @@ public class Viaje {
 
     public Viaje() {}
 
-    public Viaje(LocalDateTime fechaIniViaje, Long idUsuario, Long idMonopatin) {
+    public Viaje(LocalDateTime fechaIniViaje, Long idCuentaSistema, Long idMonopatin) {
         this.fechaIniViaje = fechaIniViaje;
-        this.idUsuario = idUsuario;
+        this.idCuentaSistema = idCuentaSistema;
         this.idMonopatin = idMonopatin;
     }
 

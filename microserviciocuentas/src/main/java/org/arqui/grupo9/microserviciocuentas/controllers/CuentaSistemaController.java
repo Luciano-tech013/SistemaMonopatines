@@ -1,11 +1,16 @@
 package org.arqui.grupo9.microserviciocuentas.controllers;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import org.arqui.grupo9.microserviciocuentas.services.CuentaSistemaService;
-import org.arqui.grupo9.microserviciocuentas.services.dtos.CuentaSistemaRequestDTO;
+import org.arqui.grupo9.microserviciocuentas.services.dtos.CuentaSistemaDTO;
 import org.arqui.grupo9.microserviciocuentas.models.CuentaSistema;
-import org.arqui.grupo9.microserviciocuentas.services.dtos.CuentaSistemaResponseDTO;
-import org.arqui.grupo9.microserviciocuentas.services.dtos.converters.CuentaSistemaConverterResponse;
+import org.arqui.grupo9.microserviciocuentas.services.dtos.CuentaSistemaWithRolesDTO;
+import org.arqui.grupo9.microserviciocuentas.services.dtos.ViajeDTO;
+import org.arqui.grupo9.microserviciocuentas.services.dtos.converters.CuentaSistemaConverter;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,15 +23,15 @@ import java.util.List;
 @RequestMapping("/api/cuentas")
 public class CuentaSistemaController {
     private CuentaSistemaService cuentaSistemaService;
-    private CuentaSistemaConverterResponse converterResponse;
+    private CuentaSistemaConverter converterResponse;
 
-    public CuentaSistemaController(CuentaSistemaService cuentaSistemaService, @Lazy CuentaSistemaConverterResponse converterResponse) {
+    public CuentaSistemaController(CuentaSistemaService cuentaSistemaService, @Lazy CuentaSistemaConverter converterResponse) {
         this.cuentaSistemaService = cuentaSistemaService;
         this.converterResponse = converterResponse;
     }
 
     @GetMapping
-    public ResponseEntity<List<CuentaSistemaResponseDTO>> findAll() {
+    public ResponseEntity<List<CuentaSistemaDTO>> findAll() {
         List<CuentaSistema> cuentasSistema = this.cuentaSistemaService.findAll();
         if (cuentasSistema.isEmpty())
             return new ResponseEntity<>(null, HttpStatus.NO_CONTENT);
@@ -35,50 +40,38 @@ public class CuentaSistemaController {
     }
 
     @GetMapping("/{idCuentaSistema}")
-    public ResponseEntity<CuentaSistemaResponseDTO> findById(@PathVariable Long idCuentaSistema) {
+    public ResponseEntity<CuentaSistemaDTO> findById(@PathVariable @Positive(message = "Un ID no puede ser negativo") Long idCuentaSistema) {
         CuentaSistema cuenta = this.cuentaSistemaService.findById(idCuentaSistema);
         return new ResponseEntity<>(this.converterResponse.fromEntity(cuenta), HttpStatus.FOUND);
     }
 
+    /*@GetMapping("/{username}")
+    public CuentaSistemaWithRolesDTO findByUsername(@PathVariable @NotBlank(message = "El string enviado debe ser valido") String username) {
+        CuentaSistema cuenta = this.cuentaSistemaService.findByUsername(username);
+        return new CuentaSistemaWithRolesDTO(cuenta.getUsername(), cuenta.getPassword(), cuenta.getUsuario().getRoles());
+    }*/
+
     @PostMapping("/crear")
-    public ResponseEntity<Boolean> crearCuenta(@RequestBody CuentaSistemaRequestDTO cuentaSistemaDTO) {
+    public ResponseEntity<Boolean> crearCuenta(@RequestBody @NotNull(message = "Debe enviar los datos para crear la entidad")@Valid CuentaSistemaDTO cuentaSistemaDTO) {
         return new ResponseEntity<>(this.cuentaSistemaService.crearCuenta(cuentaSistemaDTO), HttpStatus.CREATED);
     }
 
-    @PutMapping("/usuario/{idUsuario}/cuenta/{idCuentaSistema}/asignar")
-    public ResponseEntity<Boolean> asignarNuevoUsuario(@PathVariable Long idUsuario, @PathVariable Long idCuentaSistema) {
-        return new ResponseEntity<>(this.cuentaSistemaService.asignarNuevoUsuario(idUsuario, idCuentaSistema), HttpStatus.OK);
-    }
-
-    @PutMapping("/usuario/{idUsuario}/cuenta/{idCuentaSistema}/desvincular")
-    public ResponseEntity<Boolean> desvincularUsuario(@PathVariable Long idUsuario, @PathVariable Long idCuentaSistema) {
-        return new ResponseEntity<>(this.cuentaSistemaService.desvincularUsuario(idUsuario, idCuentaSistema), HttpStatus.OK);
-    }
-
-    @PutMapping("/{idCuentaSistema}/mercadopago/{idCuentaMp}/desvincular")
-    public ResponseEntity<Boolean> desvincularCuentaMercadoPago(@PathVariable Long idCuentaSistema, @PathVariable Long idCuentaMp) {
-        return new ResponseEntity<>(this.cuentaSistemaService.desvincularCuentaMercadoPago(idCuentaSistema, idCuentaMp), HttpStatus.OK);
-    }
-
-    @PutMapping("/{idCuentaSistema}/mercadopago/{idCuentaMp}/vincular")
-    public ResponseEntity<Boolean> vincularNuevaCuentaMercadoPago(@PathVariable Long idCuentaSistema, @PathVariable Long idCuentaMp) {
-        return new ResponseEntity<>(this.cuentaSistemaService.vincularNuevaCuentaMercadoPago(idCuentaSistema, idCuentaMp), HttpStatus.OK);
-    }
-
     @DeleteMapping("/{idCuentaSistema}")
-    public ResponseEntity<Boolean> deleteById(@PathVariable Long idCuentaSistema) {
+    public ResponseEntity<Boolean> deleteById(@PathVariable @Positive(message = "Un ID no puede ser negativo") Long idCuentaSistema) {
         return new ResponseEntity<>(this.cuentaSistemaService.deleteById(idCuentaSistema), HttpStatus.OK);
     }
 
     @PutMapping("/{idCuentaSistema}")
-    public ResponseEntity<Boolean> updateById(@PathVariable Long idCuentaSistema, @RequestBody CuentaSistemaRequestDTO cuentaSistemaDTO) {
+    public ResponseEntity<Boolean> updateById(
+            @PathVariable @Positive(message = "Un ID no puede ser negativo") Long idCuentaSistema,
+            @RequestBody @NotNull(message = "Debe enviar los datos para actualizar") @Valid CuentaSistemaDTO cuentaSistemaDTO) {
         return new ResponseEntity<>(this.cuentaSistemaService.updateById(idCuentaSistema, cuentaSistemaDTO), HttpStatus.OK);
     }
 
-    //PUEDE TRAER PROBLEMAS DE MAPEO PORQUE YA EXISTE OTRO ENDPOINT IGUAL
     @PutMapping("/{idCuentaSistema}/inhabilitar")
-    public ResponseEntity<Boolean> inhabilitarCuenta(@PathVariable Long idCuentaSistema,
-                                                     @RequestParam(name = "hasta", required = true) @NotEmpty(message = "La fecha no puede ser vacia") LocalDate fechaHasta) {
+    public ResponseEntity<Boolean> inhabilitarCuenta(
+            @PathVariable @Positive(message = "Un ID no puede ser negativo") Long idCuentaSistema,
+            @RequestParam(name = "hasta", required = true) @NotEmpty(message = "La fecha no puede ser vacia") LocalDate fechaHasta) {
         return new ResponseEntity<>(this.cuentaSistemaService.inhabilitarCuenta(idCuentaSistema, fechaHasta), HttpStatus.OK);
     }
 }

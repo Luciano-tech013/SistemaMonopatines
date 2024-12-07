@@ -9,10 +9,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
-@FeignClient(name = "microserviciomonopatin")
+@FeignClient(name = "microserviciomonopatines")
 public interface MonopatinFeignClient {
 
     @GetMapping("/api/monopatines/ubicacion")
-    ResponseEntity<List<MonopatinDTO>> getMonopatinesByUbicacion(@RequestParam(name = "latitud", required = true) @NotEmpty(message = "La latitud enviada no es valida") Double latitud,
-                                                                 @RequestParam(name = "longitud", required = true) @NotEmpty(message = "La longitud enviada no es valida") Double longitud);
+    ResponseEntity<List<MonopatinDTO>> getMonopatinesByUbicacion(@RequestParam(name = "latitud", required = true) Double latitud,
+                                                                 @RequestParam(name = "longitud", required = true) Double longitud);
 }

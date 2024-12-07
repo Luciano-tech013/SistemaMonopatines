@@ -7,11 +7,12 @@ import org.arqui.grupo9.microservicioviajes.model.Viaje;
 import org.arqui.grupo9.microservicioviajes.repository.IViajeRepository;
 import org.arqui.grupo9.microservicioviajes.services.dtos.CuentaMpDTO;
 import org.arqui.grupo9.microservicioviajes.services.dtos.MonopatinDTO;
+import org.arqui.grupo9.microservicioviajes.services.dtos.ReporteTiempoTotalPausadoDTO;
 import org.arqui.grupo9.microservicioviajes.services.exceptions.*;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -31,8 +32,10 @@ public class ViajeService {
     private static AtomicBoolean viajePausadoConRecargo;
     private static double nuevoPrecio;
     private static LocalDate fechaNueva;
-    private CuentaMpDTO cuenta;
+    private CuentaMpDTO cuentaMP;
+    private CuentaSistemaDTO cuentaSistema;
     private MonopatinDTO monopatin;
+    private final String URL_DECODIFICADA = "/generar/cuenta/{idCuentaSistema}/monopatin/{idMonopatin}";
 
     public ViajeService(IViajeRepository repository, @Lazy CuentaFeignClient cuentaClient, @Lazy MonopatinFeignClient monopatinClient) {
         this.repository = repository;
@@ -66,11 +69,21 @@ public class ViajeService {
         return true;
     }
 
-    public boolean generar(Long idCuentaMp, Long idMonopatin) {
+    //SIMULA EL ESCANEO DE UN CODIGO QR
+    public boolean realizar(Long idCuentaSistema, Long idMonopatin) {
         try {
-            cuenta = cuentaClient.findById(idCuentaMp).getBody();
+            cuenta = this.cuentaClient.findById(idCuentaSistema).getBody();
+            if(!cuenta.estaHabilitada)
+                throw new CuentaInhabilitadaException("La cuenta no esta habiltiada", "La cuenta con la que intentas operar no se encuentra habilitada", "high");
+
         } catch(FeignException.FeignClientException ex) {
-            throw new NotFoundUsuarioClientException("El usuario no está en el sistema", "No se pudo generar el viaje. Verifica los datos.", "high");
+            throw new NotFoundCuentaClientException("La cuenta no está en el sistema", "No se pudo generar el viaje. Verifica los datos.", "high");
+        }
+
+        try {
+            cuentaMP = this.cuentaMPClient.findById().getBody();
+        }catch(FeignException.FeignClientException ex) {
+            throw new NotFoundCuentaMPException("", "", "");
         }
 
         try {
@@ -79,14 +92,31 @@ public class ViajeService {
             throw new NotFoundMonopatinClientException("El monopatín no está en el sistema", "No se pudo generar el viaje. Verifica el monopatín.", "high");
         }
 
-        //Chekear el credito del usuario
-        if(cuenta.getCredito() < 0)
-            throw new CreditoInsuficienteException("La cuenta del usuario no tiene suficiente dinero para realizar un viaje", "No tienes suficiente dinero para realizar un via. Por favor, carga credito", "high");
+        if(cuentaMP.getCredito() < 0)
+            throw new SaldoInsuficienteException("El usuario no tiene suficiente saldo en su cuenta", "No tienes suficiente saldo para realizar un viaje", "high");
 
-        // Generar el viaje
-        viajeGenerado = new Viaje(LocalDateTime.now(), idCuentaMp, idMonopatin);
+        String qr = monopatin.getCodigoQR();
+        if(qr == null || qr.isEmpty())
+            throw new NotValidCodigoQRException("El codigo QR obtenido no es valido", "El Codigo QR de este monopatin es incorrecto. Por favor, realiza el reclamo", "high");
 
-        if(LocalDate.now().isEqual(fechaNueva) || LocalDate.now().isAfter(fechaNueva))
+        String qrPrimeraDecodificacion = new String(Base64.getDecoder().decode(qr), StandardCharsets.UTF_8);
+        String qrDecodificado = new String(Base64.getDecoder().decode(qrPrimeraDecodificacion), StandardCharsets.UTF_8);
+        if(!qrDecodificado.equals(URL_DECODIFICADA))
+            throw new NotValidCodigoQRException("El escaneo del QR fallo", "El Codigo QR escaneado no es valido", "high");
+
+        //LLAMAR AL ENDPOINT DE MONOPATIN QUE SIMULA ESCENDER EL MONOPATIN (ACTIVARLO)
+
+        if(!this.generar(cuenta.getIdCuentaSistema(), monopatin.getIdMonopatin()))
+            throw new ViajeException("No se puedo generar un viaje", "No se pudo generar un viaje luego del escaneo. Vuelve a intentar", "high");
+
+        return true;
+    }
+
+    private boolean generar(Long idCuentaSistema, Long idMonopatin) {
+        //Generar el viaje
+        viajeGenerado = new Viaje(LocalDateTime.now(), idCuentaSistema, idMonopatin);
+
+        if(fechaNueva != null && (LocalDate.now().isEqual(fechaNueva) || LocalDate.now().isAfter(fechaNueva)))
             viajeGenerado.setPrecio(nuevoPrecio);
 
         creditoDescontado = 0;
@@ -98,7 +128,7 @@ public class ViajeService {
         return true;
     }
 
-    public boolean pausar() {
+    public Viaje pausar() {
         viajePausado.set(true);
 
         Timer timer = new Timer();
@@ -111,17 +141,21 @@ public class ViajeService {
             }
         };
 
+        viajeGenerado.setCostoTotal(creditoDescontado);
+        viajeGenerado.setKmsRecorridos(kmsRecorridos);
         //timer.schedule(task, 900000);
-        timer.schedule(task, 15000);
-        return true;
+        timer.schedule(task, 3000);
+        return viajeGenerado;
     }
 
-    public boolean despausar() {
+    public Viaje despausar() {
         if(viajePausadoConRecargo.get())
             viajePausadoConRecargo.set(false);
 
         viajePausado.set(false);
-        return true;
+        viajeGenerado.setCostoTotal(creditoDescontado);
+        viajeGenerado.setKmsRecorridos(kmsRecorridos);
+        return viajeGenerado;
     }
 
     @Scheduled(fixedRate = 1000)
@@ -158,7 +192,7 @@ public class ViajeService {
         //aplicar los kms recorridos al monopatin
         monopatin.setKmsRecorridos(monopatin.getKmsRecorridos() + kmsRecorridos);
 
-        this.cuentaClient.save(cuenta);
+        //this.cuentaClient.save(cuenta);
         this.monopatinClient.save(monopatin);
 
         if(this.save(viajeGenerado))
@@ -192,7 +226,7 @@ public class ViajeService {
         return true;
     }
 
-    public Duration getTiempoTotalPausadoDeMonopatin(Long idMonopatin) {
+    public ReporteTiempoTotalPausadoDTO getTiempoTotalPausadoDeMonopatin(Long idMonopatin) {
         //obtengo todos los tiempos de pausa de ese monopatin (inicio y fin)
         List<Viaje> datos = this.repository.getTiemposPausadosDeMonopatin(idMonopatin);
 
@@ -204,18 +238,20 @@ public class ViajeService {
             LocalDateTime inicio = viaje.getFechaIniViajeConPausa();
 
             if (fin == null && inicio == null) {
-                throw new NotFoundFechaException("El viaje encontrado no tiene fecha de inicio y fin de la pausa", "La fecha solicitada no tiene periodo de pausa", "high");
+                return null;
             }
 
             if(inicio.isAfter(fin)) {
                 throw new NotFoundFechaException("El viaje encontrado no tiene fecha valida de inicio y fin", "La fecha del viaje encontrado es incorrecta", "high");
             }
 
-            Duration duracionPausa = Duration.between(inicio, fin);
-            tiempoTotal = tiempoTotal.plus(duracionPausa);
+            tiempoTotal = Duration.between(inicio, fin);;
         }
 
-        return tiempoTotal;
+        long horas = tiempoTotal.toHours();                // Obtiene las horas completas
+        long minutos = tiempoTotal.toMinutes();
+
+        return new ReporteTiempoTotalPausadoDTO(horas, minutos);
     }
 
     //METODOS PARA EL TESTING

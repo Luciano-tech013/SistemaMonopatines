@@ -17,7 +17,7 @@ public class ViajeDTO {
     private Double costoTotal;
 
     @Setter(AccessLevel.NONE)
-    private Duration tiempoTotal;
+    private long tiempoTotal;
 
     public ViajeDTO(LocalDateTime fechaIniViaje, LocalDateTime fechaFinViaje, Double kmsRecorridos, Double costoTotal) {
         this.fechaIniViaje = fechaIniViaje;
@@ -28,7 +28,8 @@ public class ViajeDTO {
     }
 
     public void setTiempoTotal() {
-        this.tiempoTotal = Duration.between(this.fechaIniViaje, this.fechaFinViaje);
+        if(this.fechaIniViaje != null && this.fechaFinViaje != null)
+            this.tiempoTotal = Duration.between(this.fechaIniViaje, this.fechaFinViaje).toMinutes();
     }
 
     //¿Deberia retornar el usuario y el monopatin o no?

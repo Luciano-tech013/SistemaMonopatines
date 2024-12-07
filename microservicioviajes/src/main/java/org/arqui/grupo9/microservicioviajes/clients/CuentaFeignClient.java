@@ -12,9 +12,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 @FeignClient(name = "microserviciocuentas")
 public interface CuentaFeignClient {
 
-    @GetMapping("/api/mercadopago/cuentas/{idUsuario}")
-    ResponseEntity<CuentaMpDTO> findById(@PathVariable Long idUsuario);
+    @GetMapping("/api/cuentas/{idCuentaSistema}/mercadopago/cuenta")
+    ResponseEntity<CuentaMpDTO> getCuentaMPOfCuenta(@PathVariable Long idCuentaSistema);
 
-    @PostMapping("/api/mercadopago/cuentas")
-    ResponseEntity<Boolean> save(@RequestBody @Valid CuentaMpDTO cuenta);
+    @GetMapping("/api/cuentas/{idCuentaSistema}")
+    ResponseEntity<CuentaSistemaDTO> findById(@PathVariable Long idCuentaSistema);
 }
