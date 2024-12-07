@@ -12,7 +12,7 @@ public class CuentaSistemaConverter extends ConverterDTO<CuentaSistema, CuentaSi
         if(e == null)
             return null;
 
-        return new CuentaSistemaDTO(e.getUsername(), e.getPassword(), e.getUsuario().getIdUsuario(), e.getCuentaMp().getIdCuentaMP());
+        return new CuentaSistemaDTO(e.getUsername(), e.getPassword(), e.getUsuario().getIdUsuario(), e.getIdCuentaMP());
     }
 
     @Override

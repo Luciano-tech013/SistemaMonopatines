@@ -45,20 +45,14 @@ public class CuentaSistemaController {
         return new ResponseEntity<>(this.converterResponse.fromEntity(cuenta), HttpStatus.FOUND);
     }
 
-    /*@GetMapping("/{username}")
-    public CuentaSistemaWithRolesDTO findByUsername(@PathVariable @NotBlank(message = "El string enviado debe ser valido") String username) {
-        CuentaSistema cuenta = this.cuentaSistemaService.findByUsername(username);
-        return new CuentaSistemaWithRolesDTO(cuenta.getUsername(), cuenta.getPassword(), cuenta.getUsuario().getRoles());
-    }*/
-
     @PostMapping("/crear")
     public ResponseEntity<Boolean> crearCuenta(@RequestBody @NotNull(message = "Debe enviar los datos para crear la entidad")@Valid CuentaSistemaDTO cuentaSistemaDTO) {
         return new ResponseEntity<>(this.cuentaSistemaService.crearCuenta(cuentaSistemaDTO), HttpStatus.CREATED);
     }
 
     @DeleteMapping("/{idCuentaSistema}")
-    public ResponseEntity<Boolean> deleteById(@PathVariable @Positive(message = "Un ID no puede ser negativo") Long idCuentaSistema) {
-        return new ResponseEntity<>(this.cuentaSistemaService.deleteById(idCuentaSistema), HttpStatus.OK);
+    public ResponseEntity<Boolean> eliminarCuenta(@PathVariable @Positive(message = "Un ID no puede ser negativo") Long idCuentaSistema) {
+        return new ResponseEntity<>(this.cuentaSistemaService.eliminarCuenta(idCuentaSistema), HttpStatus.OK);
     }
 
     @PutMapping("/{idCuentaSistema}")

@@ -30,17 +30,17 @@ public class CuentaSistema {
     @ManyToOne(targetEntity = Usuario.class)
     private Usuario usuario;
 
-    @ManyToOne(targetEntity = CuentaMP.class)
-    private CuentaMP cuentaMp;
+    @Column(name = "id_cuenta_mp")
+    private Long idCuentaMP;
 
     public CuentaSistema() {}
 
-    public CuentaSistema(String username, String password, Usuario usuario, CuentaMP cuentaMp) {
+    public CuentaSistema(String username, String password, Usuario usuario, Long idCuentaMP) {
         this.username = username;
         this.password = password;
         this.fechaInahilitada = null;
         this.inhabilitada = false;
         this.usuario = usuario;
-        this.cuentaMp = cuentaMp;
+        this.idCuentaMP = idCuentaMP;
     }
 }

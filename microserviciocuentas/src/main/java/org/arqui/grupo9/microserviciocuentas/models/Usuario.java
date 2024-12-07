@@ -29,6 +29,9 @@ public class Usuario {
 
     private Set<Long> cuentasMp;
 
+    @OneToMany
+    private Set<CuentaSistema> cuentas;
+
     @ManyToMany(targetEntity = Roles.class, fetch = FetchType.LAZY)
     private Set<Roles> roles;
 
@@ -44,15 +47,15 @@ public class Usuario {
         this.roles = new HashSet<>();
     }
 
-    public boolean tieneCuenta(CuentaMP cuenta) {
+    public boolean tieneCuenta(Long cuenta) {
         return this.cuentasMp.contains(cuenta);
     }
 
-    public void vincularCuenta(CuentaMP cuenta) {
+    public void vincularCuenta(Long cuenta) {
         this.cuentasMp.add(cuenta);
     }
 
-    public void desvincularCuenta(CuentaMP cuenta) {
+    public void desvincularCuenta(Long cuenta) {
         this.cuentasMp.remove(cuenta);
     }
 

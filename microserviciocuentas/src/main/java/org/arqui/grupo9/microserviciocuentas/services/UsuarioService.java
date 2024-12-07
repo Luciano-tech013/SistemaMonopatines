@@ -1,11 +1,14 @@
 package org.arqui.grupo9.microserviciocuentas.services;
 
+import org.arqui.grupo9.microserviciocuentas.clients.CuentaMpClient;
 import org.arqui.grupo9.microserviciocuentas.models.Roles;
 import org.arqui.grupo9.microserviciocuentas.models.Usuario;
 import org.arqui.grupo9.microserviciocuentas.repositories.IUsuarioRepository;
+import org.arqui.grupo9.microserviciocuentas.services.dtos.CuentaMpDTO;
 import org.arqui.grupo9.microserviciocuentas.services.dtos.UsuarioDTO;
 import org.arqui.grupo9.microserviciocuentas.services.exceptions.CuentaMPYaRegistradaException;
 import org.arqui.grupo9.microserviciocuentas.services.exceptions.DeleteUsuarioException;
+import org.arqui.grupo9.microserviciocuentas.services.exceptions.NotFoundCuentaMPException;
 import org.arqui.grupo9.microserviciocuentas.services.exceptions.NotFoundUsuarioException;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
@@ -17,12 +20,12 @@ import java.util.Optional;
 public class UsuarioService {
     private IUsuarioRepository repository;
     private RolService rolService;
-    private CuentaMpService cuentaMpService;
+    private CuentaMpClient cuentaMpClient;
 
-    public UsuarioService(IUsuarioRepository repository, @Lazy RolService rolService, @Lazy CuentaMpService cuentaMpService) {
+    public UsuarioService(IUsuarioRepository repository, @Lazy RolService rolService, @Lazy CuentaMpClient cuentaMpClient) {
         this.repository = repository;
         this.rolService = rolService;
-        this.cuentaMpService = cuentaMpService;
+        this.cuentaMpClient = cuentaMpClient;
     }
 
     public List<Usuario> findAll() {
@@ -68,29 +71,52 @@ public class UsuarioService {
 
     public boolean desvincularCuentaMercadoPago(Long idUsuario, Long idCuentaMp) {
         Usuario u = this.findById(idUsuario);
-        CuentaMP cuenta = this.cuentaMpService.findById(idCuentaMp);
+        CuentaMpDTO cuenta = null;
+        try {
+            cuenta = this.cuentaMpClient.findById(idCuentaMp).getBody();
+        } catch (Exception e) {
+            throw new NotFoundCuentaMPException("No se encontro la cuenta de mercado pago", "No se encontro la cuenta de mercado pago", "low");
+        }
 
-        if(!u.tieneCuenta(cuenta))
+        if(!u.tieneCuenta(cuenta.getIdCuentaMP()))
             throw new CuentaMPYaRegistradaException("Se intento desvincular una cuenta que no esta asociada al usuario", "La cuenta no esta asociada al usuario", "low");
 
-        u.desvincularCuenta(cuenta);
-        cuenta.desvincularUsuario(u);
+        u.desvincularCuenta(cuenta.getIdCuentaMP());
+        cuenta.desvincularUsuario(u.getIdUsuario());
         this.repository.save(u);
-        this.cuentaMpService.save(cuenta);
+
+        try {
+            this.cuentaMpClient.save(cuenta);
+        } catch(Exception e) {
+            return false;
+        }
+
         return true;
     }
 
     public boolean vincularNuevaCuentaMercadoPago(Long idUsuario, Long idCuentaMp) {
         Usuario u = this.findById(idUsuario);
-        CuentaMP cuenta = this.cuentaMpService.findById(idCuentaMp);
+        CuentaMpDTO cuenta = null;
+        try {
+            cuenta = this.cuentaMpClient.findById(idCuentaMp).getBody();
+        } catch (Exception e) {
+            throw new NotFoundCuentaMPException("No se encontro la cuenta de mercado pago", "No se encontro la cuenta de mercado pago", "low");
+        }
 
-        if(u.tieneCuenta(cuenta))
+
+        if(u.tieneCuenta(cuenta.getIdCuentaMP()))
             throw new CuentaMPYaRegistradaException("Se intento desvincular una cuenta que no esta asociada al usuario", "La cuenta no esta asociada al usuario", "low");
 
-        u.vincularCuenta(cuenta);
-        cuenta.vincularUsuario(u);
+        u.vincularCuenta(cuenta.getIdCuentaMP());
+        cuenta.vincularUsuario(u.getIdUsuario());
         this.repository.save(u);
-        this.cuentaMpService.save(cuenta);
+
+        try {
+            this.cuentaMpClient.save(cuenta);
+        } catch(Exception e) {
+            return false;
+        }
+
         return true;
     }
 

@@ -1,8 +1,10 @@
 package org.arqui.grupo9.microserviciocuentas.services;
 
+import org.arqui.grupo9.microserviciocuentas.clients.CuentaMpClient;
 import org.arqui.grupo9.microserviciocuentas.models.CuentaSistema;
 import org.arqui.grupo9.microserviciocuentas.models.Usuario;
 import org.arqui.grupo9.microserviciocuentas.repositories.ICuentaSistemaRepository;
+import org.arqui.grupo9.microserviciocuentas.services.dtos.CuentaMpDTO;
 import org.arqui.grupo9.microserviciocuentas.services.dtos.CuentaSistemaDTO;
 import org.arqui.grupo9.microserviciocuentas.services.exceptions.*;
 import org.springframework.context.annotation.Lazy;
@@ -18,12 +20,12 @@ import java.util.Optional;
 public class CuentaSistemaService {
     private ICuentaSistemaRepository repository;
     private UsuarioService usuarioService;
-    private CuentaMpService cuentaMpService;
+    private CuentaMpClient cuentaMpClient;
 
-    public CuentaSistemaService(@Lazy ICuentaSistemaRepository repository, @Lazy UsuarioService usuarioService, @Lazy CuentaMpService cuentaMpService) {
+    public CuentaSistemaService(@Lazy ICuentaSistemaRepository repository, @Lazy UsuarioService usuarioService, @Lazy CuentaMpClient cuentaMpClient) {
         this.repository = repository;
         this.usuarioService = usuarioService;
-        this.cuentaMpService = cuentaMpService;
+        this.cuentaMpClient = cuentaMpClient;
     }
 
     public List<CuentaSistema> findAll() {
@@ -40,19 +42,18 @@ public class CuentaSistemaService {
 
     public boolean crearCuenta(CuentaSistemaDTO cuenta) {
         Usuario u = this.usuarioService.findById(cuenta.getIdUsuario());
-        CuentaMP cMp = this.cuentaMpService.findById(cuenta.getIdCuenta());
 
         PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
         String encodePassword = passwordEncoder.encode(cuenta.getPassword());
         cuenta.setPassword(encodePassword);
 
-        CuentaSistema cuentaSistema = new CuentaSistema(cuenta.getUsername(), cuenta.getPassword(), u, cMp);
+        CuentaSistema cuentaSistema = new CuentaSistema(cuenta.getUsername(), cuenta.getPassword(), u, cuenta.getIdCuenta());
 
         this.repository.save(cuentaSistema);
         return true;
     }
 
-    public boolean deleteById(Long idCuentaSistema) {
+    public boolean eliminarCuenta(Long idCuentaSistema) {
         this.findById(idCuentaSistema);
         this.repository.deleteById(idCuentaSistema);
         return true;
@@ -60,14 +61,13 @@ public class CuentaSistemaService {
 
     public boolean updateById(Long idCuentaSistema, CuentaSistemaDTO cuenta) {
         Usuario u = this.usuarioService.findById(cuenta.getIdUsuario());
-        CuentaMP cMp = this.cuentaMpService.findById(cuenta.getIdCuenta());
 
         CuentaSistema c = this.findById(idCuentaSistema);
 
         c.setUsername(cuenta.getUsername());
         c.setPassword(cuenta.getPassword());
         c.setUsuario(u);
-        c.setCuentaMp(cMp);
+        c.setIdCuentaMP(cuenta.getIdCuenta());
 
         this.repository.save(c);
         return true;

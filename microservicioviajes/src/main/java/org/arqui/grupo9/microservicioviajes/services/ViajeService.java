@@ -2,10 +2,12 @@ package org.arqui.grupo9.microservicioviajes.services;
 
 import feign.FeignException;
 import org.arqui.grupo9.microservicioviajes.clients.CuentaFeignClient;
+import org.arqui.grupo9.microservicioviajes.clients.CuentaMPFeignClient;
 import org.arqui.grupo9.microservicioviajes.clients.MonopatinFeignClient;
 import org.arqui.grupo9.microservicioviajes.model.Viaje;
 import org.arqui.grupo9.microservicioviajes.repository.IViajeRepository;
 import org.arqui.grupo9.microservicioviajes.services.dtos.CuentaMpDTO;
+import org.arqui.grupo9.microservicioviajes.services.dtos.CuentaSistemaDTO;
 import org.arqui.grupo9.microservicioviajes.services.dtos.MonopatinDTO;
 import org.arqui.grupo9.microservicioviajes.services.dtos.ReporteTiempoTotalPausadoDTO;
 import org.arqui.grupo9.microservicioviajes.services.exceptions.*;
@@ -24,6 +26,7 @@ public class ViajeService {
     private IViajeRepository repository;
     private CuentaFeignClient cuentaClient;
     private MonopatinFeignClient monopatinClient;
+    private CuentaMPFeignClient cuentaMPClient;
     private static double creditoDescontado;
     private static double kmsRecorridos;
     private static Viaje viajeGenerado;
@@ -33,14 +36,15 @@ public class ViajeService {
     private static double nuevoPrecio;
     private static LocalDate fechaNueva;
     private CuentaMpDTO cuentaMP;
-    private CuentaSistemaDTO cuentaSistema;
+    private CuentaSistemaDTO cuenta;
     private MonopatinDTO monopatin;
     private final String URL_DECODIFICADA = "/generar/cuenta/{idCuentaSistema}/monopatin/{idMonopatin}";
 
-    public ViajeService(IViajeRepository repository, @Lazy CuentaFeignClient cuentaClient, @Lazy MonopatinFeignClient monopatinClient) {
+    public ViajeService(IViajeRepository repository, @Lazy CuentaFeignClient cuentaClient, @Lazy MonopatinFeignClient monopatinClient, @Lazy CuentaMPFeignClient cuentaMPClient) {
         this.repository = repository;
         this.cuentaClient = cuentaClient;
         this.monopatinClient = monopatinClient;
+        this.cuentaMPClient = cuentaMPClient;
         viajeEnCurso = new AtomicBoolean(false);
         viajePausado = new AtomicBoolean(false);
         viajePausadoConRecargo = new AtomicBoolean(false);
@@ -73,7 +77,7 @@ public class ViajeService {
     public boolean realizar(Long idCuentaSistema, Long idMonopatin) {
         try {
             cuenta = this.cuentaClient.findById(idCuentaSistema).getBody();
-            if(!cuenta.estaHabilitada)
+            if(cuenta != null && !cuenta.estaHabilitada())
                 throw new CuentaInhabilitadaException("La cuenta no esta habiltiada", "La cuenta con la que intentas operar no se encuentra habilitada", "high");
 
         } catch(FeignException.FeignClientException ex) {
@@ -81,7 +85,7 @@ public class ViajeService {
         }
 
         try {
-            cuentaMP = this.cuentaMPClient.findById().getBody();
+            cuentaMP = this.cuentaMPClient.findById(cuenta.getIdCuenta()).getBody();
         }catch(FeignException.FeignClientException ex) {
             throw new NotFoundCuentaMPException("", "", "");
         }
@@ -104,9 +108,7 @@ public class ViajeService {
         if(!qrDecodificado.equals(URL_DECODIFICADA))
             throw new NotValidCodigoQRException("El escaneo del QR fallo", "El Codigo QR escaneado no es valido", "high");
 
-        //LLAMAR AL ENDPOINT DE MONOPATIN QUE SIMULA ESCENDER EL MONOPATIN (ACTIVARLO)
-
-        if(!this.generar(cuenta.getIdCuentaSistema(), monopatin.getIdMonopatin()))
+        if(!this.generar(idCuentaSistema, monopatin.getIdMonopatin()))
             throw new ViajeException("No se puedo generar un viaje", "No se pudo generar un viaje luego del escaneo. Vuelve a intentar", "high");
 
         return true;
@@ -187,12 +189,12 @@ public class ViajeService {
         viajeGenerado.setKmsRecorridos(kmsRecorridos);
 
         //aplicar credito descontado a la cuenta del usuario
-        cuenta.setCredito(cuenta.getCredito() - creditoDescontado);
+        cuentaMP.setCredito(cuentaMP.getCredito() - creditoDescontado);
 
         //aplicar los kms recorridos al monopatin
         monopatin.setKmsRecorridos(monopatin.getKmsRecorridos() + kmsRecorridos);
 
-        //this.cuentaClient.save(cuenta);
+        this.cuentaMPClient.save(cuentaMP);
         this.monopatinClient.save(monopatin);
 
         if(this.save(viajeGenerado))

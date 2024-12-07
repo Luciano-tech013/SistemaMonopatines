@@ -1,19 +1,16 @@
-package org.arqui.grupo9.microserviciocuentas.services.dtos;
+package org.arqui.grupo9.microservicioviajes.services.dtos;
 
-import jakarta.persistence.Column;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import org.arqui.grupo9.microserviciocuentas.models.CuentaSistema;
+import lombok.Getter;
+import lombok.Setter;
 
-import java.io.Serializable;
 import java.time.LocalDate;
 
-@Data
-@AllArgsConstructor
-public class CuentaSistemaDTO implements Serializable {
+@Getter
+@Setter
+public class CuentaSistemaDTO {
     @NotBlank(message = "El username de la cuenta no es valido")
     private String username;
 
@@ -31,4 +28,17 @@ public class CuentaSistemaDTO implements Serializable {
     private LocalDate fechaInahilitada;
 
     private boolean inhabilitada;
+
+    public boolean estaHabilitada() {
+        if(this.fechaInahilitada == null)
+            return true;
+
+        if(this.fechaInahilitada.isEqual(LocalDate.now()) || this.fechaInahilitada.isBefore(LocalDate.now())) {
+            setInhabilitada(false);
+            setFechaInahilitada(null);
+            return true;
+        }
+
+        return false;
+    }
 }
